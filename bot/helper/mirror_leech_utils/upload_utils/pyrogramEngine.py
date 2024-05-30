@@ -15,7 +15,8 @@ from aioshutil import copy
 from bot import config_dict, user_data, GLOBAL_EXTENSION_FILTER, bot, user, IS_PREMIUM_USER
 from bot.helper.telegram_helper.button_build import ButtonMaker
 from bot.helper.telegram_helper.message_utils import sendCustomMsg, sendMultiMessage, chat_info, deleteMessage, get_tg_link_content
-from bot.helper.ext_utils.files_utils import clean_unwanted, is_archive, get_base_name, get_media_info, get_document_type, take_ss, get_ss, get_mediainfo_link, format_filename, get_audio_thumb
+from bot.helper.aeon_utils.metadata import add_attachment
+from bot.helper.ext_utils.files_utils import clean_unwanted, is_archive, get_base_name, get_media_info, get_document_type, take_ss, get_ss, get_mediainfo_link, process_file, get_audio_thumb
 from bot.helper.ext_utils.bot_utils import get_readable_file_size, sync_to_async, is_telegram_link, is_url, download_image_url
 
 LOGGER = getLogger(__name__)
@@ -89,7 +90,9 @@ class TgUploader:
             LOGGER.error(f"ScreenShots Error: {e}")
         try:
             if self.__mediainfo:
-                buttons.ubutton('MediaInfo', await get_mediainfo_link(up_path))
+                m =  await get_mediainfo_link(up_path)
+                buttons.ubutton('MediaInfo', m)
+                LOGGER.info(m)
         except Exception as e:
             LOGGER.error(f"MediaInfo Error: {str(e)}")
         return buttons.build_menu(1) if self.__has_buttons else None
@@ -178,7 +181,9 @@ class TgUploader:
         return True
 
     async def __prepare_file(self, prefile_, dirpath):
-        file_, cap_mono = await format_filename(prefile_, self.__user_id, dirpath)
+        file_, cap_mono = await process_file(prefile_, self.__user_id, dirpath)
+        if atc:=self.__listener.attachment:
+            file_ = await add_attachment(file_, dirpath, atc)
         if prefile_ != file_:
             if self.__listener.seed and not self.__listener.newDir and not dirpath.endswith("/splited_files"):
                 dirpath = f'{dirpath}/copied'
@@ -300,7 +305,9 @@ class TgUploader:
                     await self.__switching_client()
                     await self.__upload_file(cap_mono, file_)
                     if not isDeleted:
-                        await deleteMessage(list(self.__leechmsg.values())[0])
+                        values_list = list(self.__leechmsg.values())
+                        if values_list:
+                            await deleteMessage(values_list[0])
                         isDeleted = True
                     if self.__is_cancelled:
                         return

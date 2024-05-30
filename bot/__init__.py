@@ -12,18 +12,18 @@ from aria2p import API as ariaAPI, Client as ariaClient
 from qbittorrentapi import Client as qbClient
 from faulthandler import enable as faulthandler_enable
 from socket import setdefaulttimeout
-from logging import getLogger, FileHandler, StreamHandler, INFO, basicConfig, error, info, warning, Formatter
+from logging import getLogger, FileHandler, StreamHandler, INFO, basicConfig, error, info, warning, Formatter, ERROR
 from uvloop import install
 
 faulthandler_enable()
 install()
 setdefaulttimeout(600)
-
+getLogger("telegraph").setLevel(ERROR)
 botStartTime = time()
 
 class CustomFormatter(Formatter):
     def format(self, record):
-        return super().format(record).replace(record.levelname, record.levelname[:4])
+        return super().format(record).replace(record.levelname, record.levelname[:1])
 
 formatter = CustomFormatter("[%(asctime)s] [%(levelname)s] - %(message)s", datefmt="%d-%b-%y %I:%M:%S %p")
 
@@ -134,6 +134,10 @@ if len(TELEGRAM_HASH) == 0:
 GDRIVE_ID = environ.get('GDRIVE_ID', '')
 if len(GDRIVE_ID) == 0:
     GDRIVE_ID = ''
+
+METADATA_KEY = environ.get('METADATA_KEY', '')
+if len(METADATA_KEY) == 0:
+    METADATA_KEY = ''
 
 RCLONE_PATH = environ.get('RCLONE_PATH', '')
 if len(RCLONE_PATH) == 0:
@@ -328,6 +332,7 @@ config_dict = {
     'MEDIA_GROUP': MEDIA_GROUP,
     'MEGA_EMAIL': MEGA_EMAIL,
     'MEGA_PASSWORD': MEGA_PASSWORD,
+    'METADATA_KEY': METADATA_KEY,
     'OWNER_ID': OWNER_ID,
     'QUEUE_ALL': QUEUE_ALL,
     'QUEUE_DOWNLOAD': QUEUE_DOWNLOAD,
